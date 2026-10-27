@@ -24,6 +24,45 @@ int bind_socket(int fd,const sockaddr_in& addr)
     return 0;
 }
 
+// Считывание ввода текста от пользователя и вывод его в консоль сервера
+void handle_client(int clientFD)
+{
+    char buf[1024];
+    ssize_t n = read(clientFD, buf, sizeof(buf) - 1);
+    if (n > 0) 
+    {
+        buf[n] = '\0';
+        std::cout << "Message from Client: " << buf << "\n";
+
+        // Привет от сервера
+        const char reply[] = "Hello from Server!\n";
+        ssize_t sent = write(clientFD, reply, sizeof(reply) - 1);
+        if (sent == -1) 
+        {
+            std::perror("Can't Write!");
+        }
+
+    } 
+        
+    else if (n == 0) 
+    {
+        std::cout << "Client closed connection...\n";
+    } 
+
+    else 
+    {
+        std::perror("Can't Read!");
+    }
+    
+}
+
+// Закрытие соединения с клиентом
+void client_close(int clientFD)
+{
+    shutdown(clientFD, SHUT_RDWR);
+    close(clientFD);
+}
+
 
 int main()
 {
@@ -86,40 +125,14 @@ int main()
             continue;
         }
 
-        // Работа с клиентом-----------------------------------------------------------------------------
-
-        char buf[1024];
-        ssize_t n = read(clientFD, buf, sizeof(buf) - 1);
-        if (n > 0) 
-        {
-            buf[n] = '\0';
-            std::cout << "Message from Client: " << buf << "\n";
-
-            // Привет от сервера
-            const char reply[] = "Hello from Server!\n";
-            ssize_t sent = write(clientFD, reply, sizeof(reply) - 1);
-            if (sent == -1) 
-            {
-                std::perror("Can't Write!");
-            }
-
-        } 
-        
-        else if (n == 0) 
-        {
-            std::cout << "Client closed connection...\n";
-        } 
-
-        else 
-        {
-            std::perror("Can't Read!");
-        }
+        // Работа с клиентом------------------------------------
+        handle_client(clientFD);
 
 
         // Завершение работы
-        shutdown(clientFD, SHUT_RDWR);
-        close(clientFD);
-
+        
+        
+        client_close(clientFD);
 
     }
 
